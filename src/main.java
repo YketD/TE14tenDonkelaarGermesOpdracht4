@@ -1,104 +1,71 @@
-import akka.actor.Actor;
-import akka.actor.ActorContext;
-import akka.actor.ActorRef;
-import akka.actor.SupervisorStrategy;
+import akka.actor.*;
+import akka.routing.*;
 import scala.Option;
 import scala.PartialFunction;
 import scala.runtime.BoxedUnit;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by yketd on 12-10-2016.
  */
 public class main {
+    ActorSystem system;
+    static Router router2;
+
+    static ActorRef generalAdmission, reserverdFloorSeating, northGrandStand, southGrandStand, standingPit;
+
+    public static final String CANCEL = "cancel",
+            PAYMENT = "payment",
+            REQUESTED = "requested",
+            RESERVED = "reserved",
+    SOLD = "sold";
+
+
     public static void main(String[] args) {
         new main().run();
     }
-    public void run(){
-        Actor actor = new Actor() {
-            @Override
-            public void akka$actor$Actor$_setter_$context_$eq(ActorContext actorContext) {
 
-            }
+    public void run() {
+        system = ActorSystem.create("Routing");
 
-            @Override
-            public void akka$actor$Actor$_setter_$self_$eq(ActorRef actorRef) {
+        ActorRef actor;
+        List<Routee> routees = new ArrayList<Routee>();
+        for (int i = 0; i < 5; i++) {
+            actor = system.actorOf(Props.create(VerkoopAgent.class), "VA" + i);
+            routees.add(new ActorRefRoutee(actor));
+        }
 
-            }
+        router2 = new Router(new SmallestMailboxRoutingLogic(), routees);
 
-            @Override
-            public ActorContext context() {
-                return null;
-            }
+        for (int i = 1; i< 10; i++){
+            router2.route(i,null);
+        }
+        instantiateVakAgents();
+        instantiateKlanten();
 
-            @Override
-            public ActorRef self() {
-                return null;
-            }
+    }
 
-            @Override
-            public ActorRef sender() {
-                return null;
-            }
+    public void instantiateVakAgents() {
+         generalAdmission = system.actorOf(Props.create(VakAgent.class), "generaladmission");
+         reserverdFloorSeating = system.actorOf(Props.create(VakAgent.class), "reservedfloorseating");
+         northGrandStand = system.actorOf(Props.create(VakAgent.class), "northgrandstand");
+         southGrandStand = system.actorOf(Props.create(VakAgent.class), "southgrandstand");
+         standingPit = system.actorOf(Props.create(VakAgent.class), "standingpit");
 
-            @Override
-            public PartialFunction<Object, BoxedUnit> receive() {
-                return null;
-            }
+    }
 
-            @Override
-            public void aroundReceive(PartialFunction<Object, BoxedUnit> partialFunction, Object o) {
 
-            }
 
-            @Override
-            public void aroundPreStart() {
+    public void instantiateKlanten() {
+        for (int i = 0; i < 300; i++) {
+            ActorRef klant = system.actorOf(Props.create(Klant.class), "klant" + i);
+            klant.tell("go", null);
+        }
+    }
 
-            }
-
-            @Override
-            public void aroundPostStop() {
-
-            }
-
-            @Override
-            public void aroundPreRestart(Throwable throwable, Option<Object> option) {
-
-            }
-
-            @Override
-            public void aroundPostRestart(Throwable throwable) {
-
-            }
-
-            @Override
-            public SupervisorStrategy supervisorStrategy() {
-                return null;
-            }
-
-            @Override
-            public void preStart() throws Exception {
-
-            }
-
-            @Override
-            public void postStop() throws Exception {
-
-            }
-
-            @Override
-            public void preRestart(Throwable throwable, Option<Object> option) throws Exception {
-
-            }
-
-            @Override
-            public void postRestart(Throwable throwable) throws Exception {
-
-            }
-
-            @Override
-            public void unhandled(Object o) {
-
-            }
-        }ctor;
+    public static int getRandom(int random) {
+        return (int) (Math.random() * random);
     }
 }
